@@ -1,0 +1,93 @@
+---
+title: "Fitting Position Latent Cluster Models for Social Networks with latentnet"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##Latent Position Models
+
+To get an idea of what the package can do we fit a standard data set in the social network literature. In 1968, Sampson collected data on 18 monks and their interpersonal relations (Sampson 1969). Each monk was asked about positive relations with the other monks and reciprocity was not required, thus the graph is directed. The data contain 56 directed ties between the 18 monks. There are no covariates in this data set, thus estimation is of a single covariate (the intercept) and the positions of the actors. The data is available in the package via the data function and a description can be found using the help function:
+
+```{r message=F}
+library(latentnet)
+help("sampson")
+help("samplike")
+```
+
+Let’s take a look at the names of the monks (followed by their order in the original):
+
+```{r message=F}
+data("sampson")
+samplike
+network.vertex.names(samplike)
+```
+
+and at the cohesive sub-groups designated by Sampson (1969).
+
+```{r}
+samplike %v% "group"
+```
+
+In a latent position model, each node has an associated latent position. Notes with nearby latent positions are likely to form ties. To fit such a model, we need to specify the distance metric, and the dimension. In the example below, we use euclidean distance, with d=2 dimensions.
+
+```{r warning=F, message=F}
+samp_fit <- ergmm(samplike ~ euclidean(d=2))
+summary(samp_fit)
+```
+
+Convergence diagnostics:
+```{r fig.height = 10, fig.width = 10}
+mcmc.diagnostics(samp_fit)
+```
+
+Details on Raftery And Lewis's Diagnostic can be found [here](https://www.rdocumentation.org/packages/coda/versions/0.19-2/topics/raftery.diag)
+
+Fitted positions:
+```{r}
+plot(samp_fit)
+```
+
+##Model-Based Clustering Models
+We can extend the Using Sampson's Monk data, lets fit a latent clustering random effects model.
+
+```{r}
+samp_fit2 <- ergmm(samplike ~ euclidean(d=2, G=3))
+summary(samp_fit2)
+```
+
+Convergence diagnostics:
+```{r fig.height = 10, fig.width = 10}
+mcmc.diagnostics(samp_fit2)
+```
+
+
+Fitted positions and clusters:
+```{r}
+plot(samp_fit2, pie=TRUE)
+```
+
+##Popularity Random Effect
+We can add other terms to the model, for example a random effect capturing heterogeneous popularities of tie receivers.
+
+```{r}
+samp_fit3 <- ergmm(samplike ~ euclidean(d=2, G=3)+rreceiver)
+summary(samp_fit3)
+```
+
+Convergence diagnostics:
+```{r fig.height = 10, fig.width = 10}
+mcmc.diagnostics(samp_fit3)
+```
+
+Fitted positions and clusters:
+```{r}
+plot(samp_fit3, pie=TRUE)
+```
+
+##References
+Krivitsky and Handcock(2008): Fitting Position Latent Cluster Models for Social Networks with latentnet
+
+[Online page on latentnet](http://ptrckprry.com/course/ssd/lecture/latentnet.html)
